@@ -1,27 +1,18 @@
 const timeline = [];
 
-// ----------------------
 // Instructions
-// ----------------------
-const instructions = {
+timeline.push({
   type: jsPsychHtmlKeyboardResponse,
   stimulus: `
-    <div class="instructions">
-      <p>Welcome to the Lexical Decision Task.</p>
-      <p>You will see a series of letter strings.</p>
-      <p>If the string is a <strong>real English word</strong>, press the <strong>J</strong> key.</p>
-      <p>If the string is a <strong>non-word</strong>, press the <strong>F</strong> key.</p>
-      <p>Press any key to begin.</p>
-    </div>
+    <p>Welcome to the Lexical Decision Task.</p>
+    <p>Press <strong>J</strong> if the letter string is a word.</p>
+    <p>Press <strong>F</strong> if the letter string is not a word.</p>
+    <p>Press any key to begin.</p>
   `,
   choices: "ALL_KEYS"
-};
+});
 
-timeline.push(instructions);
-
-// ----------------------
-// Fixation cross
-// ----------------------
+// Fixation
 const fixation = {
   type: jsPsychHtmlKeyboardResponse,
   stimulus: '<div style="font-size:48px;">+</div>',
@@ -29,9 +20,7 @@ const fixation = {
   trial_duration: 1000
 };
 
-// ----------------------
-// Lexical Decision Task trial
-// ----------------------
+// Trial
 const ldt_trial = {
   type: jsPsychHtmlKeyboardResponse,
   stimulus: jsPsych.timelineVariable('word'),
@@ -42,42 +31,24 @@ const ldt_trial = {
   }
 };
 
-// ----------------------
-// Procedure: fixation → trial
-// ----------------------
-const ldt_procedure = {
+// Procedure
+timeline.push({
   timeline: [fixation, ldt_trial],
   timeline_variables: [
     {word: "house", correct_key: 'j'},
-    {word: "flirp", correct_key: 'f'},
-    {word: "table", correct_key: 'j'},
-    {word: "blost", correct_key: 'f'}
+    {word: "flirp", correct_key: 'f'}
   ],
   randomize_order: true
-};
+});
 
-timeline.push(ldt_procedure);
-
-// ----------------------
 // End screen
-// ----------------------
-const end_screen = {
+timeline.push({
   type: jsPsychHtmlKeyboardResponse,
-  stimulus: `<p>Thank you for participating!<br>
-             Your responses have been recorded.</p>
-             <p>You may now close this window.</p>`,
+  stimulus: '<p>Thank you for participating! Press any key to finish.</p>',
   choices: "ALL_KEYS"
-};
+});
 
-timeline.push(end_screen);
-
-// ----------------------
-// Initialize
-// ----------------------
+// Init
 jsPsych.init({
-  timeline: timeline,
-  on_finish: function(){
-    // Save data locally as CSV (can later redirect to Qualtrics)
-    jsPsych.data.get().localSave('csv','ldt_data.csv');
-  }
+  timeline: timeline
 });
