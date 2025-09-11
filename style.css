@@ -1,0 +1,55 @@
+/* style.css — starter stylesheet for jsPsych experiments */
+
+/* General page styling */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f7f7f7;
+  margin: 0;
+  padding: 0;
+  color: #222;
+}
+
+/* Center the experiment container */
+#jspsych-experiment {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;   /* full viewport height */
+  text-align: center;
+}
+
+/* Stimulus text */
+.jspsych-content {
+  font-size: 2em;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Feedback or instructions */
+.instructions {
+  font-size: 1.2em;
+  margin: 20px;
+  color: #555;
+}
+
+/* Response keys hint */
+.response-keys {
+  font-size: 1em;
+  margin-top: 15px;
+  color: #777;
+}
+
+/* Optional button styling (if you add button trials) */
+button {
+  padding: 10px 20px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
