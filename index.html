@@ -4,17 +4,23 @@
 <meta charset="utf-8" />
 <title>RT Tasks</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<!-- Load jsPsych & plugins from CDN (allowed here, since this is your own page) -->
+
+<!-- jsPsych core + plugins -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspsych@8.2.2/css/jspsych.css">
 <script src="https://cdn.jsdelivr.net/npm/jspsych@8.2.2/dist/jspsych.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-html-keyboard-response@2.1.0/dist/plugin-html-keyboard-response.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-survey-html-form@2.1.0/dist/plugin-survey-html-form.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspsych@8.2.2/css/jspsych.css">
+
 <style>
-  html,body{margin:0;height:100%}
+  html, body { margin:0; height:100%; overflow:hidden; }
   #jspsych-target, #jspsych-target .jspsych-content { height:100vh; }
-  #jspsych-target .jspsych-content { display:flex; align-items:center; justify-content:center; text-align:center; font-size:60px; }
+  #jspsych-target .jspsych-content {
+    display:flex; align-items:center; justify-content:center;
+    text-align:center; font-size:60px;
+  }
   .typed-input { font-size:28px; padding:10px 12px; width:60vw; max-width:640px; }
   .stim { font-size:48px; margin-bottom:18px; }
+  .msg { font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#555; padding:16px; }
 </style>
 </head>
 <body>
@@ -22,242 +28,260 @@
 
 <script>
 (function(){
-  // --- read URL params coming from Qualtrics ---
+  // ---------- read URL params from Qualtrics ----------
   const q = new URLSearchParams(location.search);
-  const RUN_LANG = (q.get('run_lang') || 'EN').toUpperCase();  // EN or ES
-  const LIST_LDT   = clamp(q.get('list_ldt')   || q.get('list_id') || 1);
-  const LIST_SCT   = clamp(q.get('list_sct')   || q.get('list_id') || 1);
-  const LIST_RECOG = clamp(q.get('list_recog') || q.get('list_id') || 1);
-  const LIST_RECALL= clamp(q.get('list_recall')|| q.get('list_id') || 1);
-  const RESP_ID    = q.get('rid') || '';
-  function clamp(v){ const n = parseInt(v,10); return Math.min(4, Math.max(1, isFinite(n)?n:1)); } // you said 4 lists
+  const RUN_LANG    = (q.get('run_lang') || 'EN').toUpperCase(); // EN or ES
+  const LISTS       = 4; // you are using 4 lists per task
+  const clamp = v => {
+    const n = parseInt(v, 10);
+    return Math.min(LISTS, Math.max(1, Number.isFinite(n) ? n : 1));
+  };
+  const LIST_LDT    = clamp(q.get('list_ldt')    || q.get('list_id') || 1);
+  const LIST_SCT    = clamp(q.get('list_sct')    || q.get('list_id') || 1);
+  const LIST_RECOG  = clamp(q.get('list_recog')  || q.get('list_id') || 1);
+  const LIST_RECALL = clamp(q.get('list_recall') || q.get('list_id') || 1);
+  const RESP_ID     = q.get('rid') || '';
 
-  // --- your stimuli (paste your real arrays here) ---
-const LDT_EN = [
-        [ // list 1
-    { stimulus: "camory", isWord:false }, { stimulus: "enjury", isWord:false },
-    { stimulus: "bank", isWord:true }, { stimulus: "incention", isWord:true },
-    { stimulus: "letter", isWord:true }, { stimulus: "sentory", isWord:true },
-    { stimulus: "orimal", isWord:false }, { stimulus: "woman", isWord:true },
-    { stimulus: "intection", isWord:true }, { stimulus: "father", isWord:true },
-    { stimulus: "polara", isWord:false }, { stimulus: "reveral", isWord:true },
-    { stimulus: "child", isWord:true }, { stimulus: "vistory", isWord:true },
-    { stimulus: "building", isWord:true }, { stimulus: "oritor", isWord:false },
-    { stimulus: "redition", isWord:true }, { stimulus: "depeal", isWord:false },
-    { stimulus: "tomicy", isWord:false }, { stimulus: "wall", isWord:true },
-    { stimulus: "refective", isWord:true }, { stimulus: "avenda", isWord:false },
-    { stimulus: "perily", isWord:true }, { stimulus: "dog", isWord:true },
-    { stimulus: "inency", isWord:false }, { stimulus: "sendition", isWord:true },
-    { stimulus: "doctor", isWord:true }, { stimulus: "indident", isWord:true },
-    { stimulus: "deripe", isWord:false }, { stimulus: "street", isWord:true }
-  ],
-  [ // list 2
-    { stimulus: "street", isWord:true }, { stimulus: "intection", isWord:true },
-    { stimulus: "letter", isWord:true }, { stimulus: "orimal", isWord:false },
-    { stimulus: "vistory", isWord:true }, { stimulus: "tomicy", isWord:false },
-    { stimulus: "bank", isWord:true }, { stimulus: "deripe", isWord:false },
-    { stimulus: "enjury", isWord:false }, { stimulus: "sentory", isWord:true },
-    { stimulus: "depeal", isWord:false }, { stimulus: "reveral", isWord:true },
-    { stimulus: "oritor", isWord:false }, { stimulus: "sendition", isWord:true },
-    { stimulus: "woman", isWord:true }, { stimulus: "camory", isWord:false },
-    { stimulus: "refective", isWord:true }, { stimulus: "dog", isWord:true },
-    { stimulus: "father", isWord:true }, { stimulus: "incention", isWord:true },
-    { stimulus: "polara", isWord:false }, { stimulus: "indident", isWord:true },
-    { stimulus: "child", isWord:true }, { stimulus: "avenda", isWord:false },
-    { stimulus: "perily", isWord:true }, { stimulus: "doctor", isWord:true },
-    { stimulus: "redition", isWord:true }, { stimulus: "building", isWord:true },
-    { stimulus: "inency", isWord:false }, { stimulus: "wall", isWord:true }
-  ],
-  [ // list 3
-    { stimulus: "dog", isWord:true }, { stimulus: "tomicy", isWord:false },
-    { stimulus: "perily", isWord:true }, { stimulus: "wall", isWord:true },
-    { stimulus: "intection", isWord:true }, { stimulus: "orimal", isWord:false },
-    { stimulus: "letter", isWord:true }, { stimulus: "sendition", isWord:true },
-    { stimulus: "child", isWord:true }, { stimulus: "vistory", isWord:true },
-    { stimulus: "street", isWord:true }, { stimulus: "reveral", isWord:true },
-    { stimulus: "camory", isWord:false }, { stimulus: "building", isWord:true },
-    { stimulus: "incention", isWord:true }, { stimulus: "enjury", isWord:false },
-    { stimulus: "woman", isWord:true }, { stimulus: "redition", isWord:true },
-    { stimulus: "doctor", isWord:true }, { stimulus: "oritor", isWord:false },
-    { stimulus: "indident", isWord:true }, { stimulus: "inency", isWord:false },
-    { stimulus: "bank", isWord:true }, { stimulus: "depeal", isWord:false },
-    { stimulus: "refective", isWord:true }, { stimulus: "deripe", isWord:false },
-    { stimulus: "father", isWord:true }, { stimulus: "sentory", isWord:true },
-    { stimulus: "polara", isWord:false }, { stimulus: "avenda", isWord:false }
-  ],
-  [ // list 4
-    { stimulus: "dog", isWord:true }, { stimulus: "incention", isWord:true },
-    { stimulus: "father", isWord:true }, { stimulus: "enjury", isWord:false },
-    { stimulus: "child", isWord:true }, { stimulus: "indident", isWord:true },
-    { stimulus: "building", isWord:true }, { stimulus: "vistory", isWord:true },
-    { stimulus: "doctor", isWord:true }, { stimulus: "redition", isWord:true },
-    { stimulus: "oritor", isWord:false }, { stimulus: "inency", isWord:false },
-    { stimulus: "refective", isWord:true }, { stimulus: "deripe", isWord:false },
-    { stimulus: "tomicy", isWord:false }, { stimulus: "avenda", isWord:false },
-    { stimulus: "street", isWord:true }, { stimulus: "reveral", isWord:true },
-    { stimulus: "wall", isWord:true }, { stimulus: "intection", isWord:true },
-    { stimulus: "woman", isWord:true }, { stimulus: "sentory", isWord:true },
-    { stimulus: "depeal", isWord:false }, { stimulus: "letter", isWord:true },
-    { stimulus: "orimal", isWord:false }, { stimulus: "polara", isWord:false },
-    { stimulus: "sendition", isWord:true }, { stimulus: "camory", isWord:false },
-    { stimulus: "perily", isWord:true }, { stimulus: "bank", isWord:true }
-  ]
-];
-    const LDT_ES = [
-      [ // lista 1
-    { stimulus: "motilo", isWord:false }, { stimulus: "mareja", isWord:true },
-    { stimulus: "carta", isWord:true }, { stimulus: "vinero", isWord:true },
-    { stimulus: "mujer", isWord:true }, { stimulus: "semara", isWord:false },
-    { stimulus: "banco", isWord:true }, { stimulus: "edificio", isWord:true },
-    { stimulus: "verado", isWord:true }, { stimulus: "misico", isWord:false },
-    { stimulus: "perro", isWord:true }, { stimulus: "tadera", isWord:true },
-    { stimulus: "géneda", isWord:false }, { stimulus: "monero", isWord:false },
-    { stimulus: "momido", isWord:true }, { stimulus: "médico", isWord:true },
-    { stimulus: "accena", isWord:false }, { stimulus: "comana", isWord:true },
-    { stimulus: "pared", isWord:true }, { stimulus: "camano", isWord:false },
-    { stimulus: "cadero", isWord:true }, { stimulus: "niño", isWord:true },
-    { stimulus: "caneza", isWord:true }, { stimulus: "calle", isWord:true },
-    { stimulus: "madela", isWord:false }, { stimulus: "semado", isWord:true },
-    { stimulus: "dinuto", isWord:false }, { stimulus: "padre", isWord:true },
-    { stimulus: "motura", isWord:true }, { stimulus: "figuna", isWord:false }
-  ],
-  [ // lista 2
-    { stimulus: "camano",   isWord:false }, { stimulus: "momido", isWord:true },
-    { stimulus: "perro",  isWord:true }, { stimulus: "motura",  isWord:true },
-    { stimulus: "edificio", isWord:true }, { stimulus: "vinero", isWord:true },
-    { stimulus: "géneda", isWord:false }, { stimulus: "dinuto", isWord:false },
-    { stimulus: "tadera", isWord:true }, { stimulus: "pared", isWord:true },
-    { stimulus: "banco", isWord:true }, { stimulus: "semado", isWord:true },
-    { stimulus: "padre", isWord:true }, { stimulus: "semara", isWord:false },
-    { stimulus: "cadero", isWord:true }, { stimulus: "carta", isWord:true },
-    { stimulus: "mujer", isWord:true }, { stimulus: "comana", isWord:true },
-    { stimulus: "accena", isWord:false }, { stimulus: "verado", isWord:true },
-    { stimulus: "figuna", isWord:false }, { stimulus: "monero", isWord:false },
-    { stimulus: "caneza", isWord:true }, { stimulus: "madela", isWord:false },
-    { stimulus: "calle", isWord:true }, { stimulus: "motilo", isWord:false },
-    { stimulus: "mareja", isWord:true }, { stimulus: "médico", isWord:true },
-    { stimulus: "niño", isWord:true }, { stimulus: "misico", isWord:false }
-  ],
-  [ // lista 3
-    { stimulus: "edificio", isWord:true }, { stimulus: "géneda",  isWord:false },
-    { stimulus: "momido",isWord:true }, { stimulus: "perro", isWord:true },
-    { stimulus: "tadera", isWord:true }, { stimulus: "niño", isWord:true },
-    { stimulus: "caneza", isWord:true }, { stimulus: "dinuto", isWord:false },
-    { stimulus: "pared", isWord:true }, { stimulus: "semado", isWord:true },
-    { stimulus: "padre", isWord:true }, { stimulus: "verado", isWord:true },
-    { stimulus: "misico", isWord:false }, { stimulus: "camano", isWord:false },
-    { stimulus: "vinero", isWord:true }, { stimulus: "monero", isWord:false },
-    { stimulus: "calle", isWord:true }, { stimulus: "motilo", isWord:false },
-    { stimulus: "banco", isWord:true }, { stimulus: "semara", isWord:false },
-    { stimulus: "comana", isWord:true }, { stimulus: "figuna", isWord:false },
-    { stimulus: "cadero", isWord:true }, { stimulus: "mujer", isWord:true },
-    { stimulus: "mareja", isWord:true }, { stimulus: "accena", isWord:false },
-    { stimulus: "motura", isWord:true }, { stimulus: "carta", isWord:true },
-    { stimulus: "madela", isWord:false }, { stimulus: "médico", isWord:false }
-  ],
-  [ // lista 4
-    { stimulus: "edificio", isWord:true }, { stimulus: "perro",  isWord:true },
-    { stimulus: "tadera",isWord:true }, { stimulus: "médico", isWord:true },
-    { stimulus: "niño", isWord:true }, { stimulus: "momido", isWord:true },
-    { stimulus: "dinuto", isWord:false }, { stimulus: "cadero", isWord:true },
-    { stimulus: "carta", isWord:true }, { stimulus: "motura", isWord:true },
-    { stimulus: "calle", isWord:true }, { stimulus: "camano", isWord:false },
-    { stimulus: "caneza", isWord:true }, { stimulus: "padre", isWord:true },
-    { stimulus: "semado", isWord:true }, { stimulus: "pared", isWord:true },
-    { stimulus: "géneda", isWord:false }, { stimulus: "madela", isWord:false },
-    { stimulus: "figuna", isWord:false }, { stimulus: "comana", isWord:false },
-    { stimulus: "motilo", isWord:false }, { stimulus: "vinero", isWord:true },
-    { stimulus: "mujer", isWord:true }, { stimulus: "verado", isWord:true },
-    { stimulus: "accena", isWord:false }, { stimulus: "mareja", isWord:true },
-    { stimulus: "monero", isWord:false }, { stimulus: "banco", isWord:true },
-    { stimulus: "misico", isWord:false }, { stimulus: "semara", isWord:false }
-  ]
-];
+  // ---------- stimuli (your arrays unchanged, except tiny typo fix noted below) ----------
+  const LDT_EN = [
+    [ // list 1
+      { stimulus: "camory", isWord:false }, { stimulus: "enjury", isWord:false },
+      { stimulus: "bank", isWord:true }, { stimulus: "incention", isWord:true },
+      { stimulus: "letter", isWord:true }, { stimulus: "sentory", isWord:true },
+      { stimulus: "orimal", isWord:false }, { stimulus: "woman", isWord:true },
+      { stimulus: "intection", isWord:true }, { stimulus: "father", isWord:true },
+      { stimulus: "polara", isWord:false }, { stimulus: "reveral", isWord:true },
+      { stimulus: "child", isWord:true }, { stimulus: "vistory", isWord:true },
+      { stimulus: "building", isWord:true }, { stimulus: "oritor", isWord:false },
+      { stimulus: "redition", isWord:true }, { stimulus: "depeal", isWord:false },
+      { stimulus: "tomicy", isWord:false }, { stimulus: "wall", isWord:true },
+      { stimulus: "refective", isWord:true }, { stimulus: "avenda", isWord:false },
+      { stimulus: "perily", isWord:true }, { stimulus: "dog", isWord:true },
+      { stimulus: "inency", isWord:false }, { stimulus: "sendition", isWord:true },
+      { stimulus: "doctor", isWord:true }, { stimulus: "indident", isWord:true },
+      { stimulus: "deripe", isWord:false }, { stimulus: "street", isWord:true }
+    ],
+    [ // list 2
+      { stimulus: "street", isWord:true }, { stimulus: "intection", isWord:true },
+      { stimulus: "letter", isWord:true }, { stimulus: "orimal", isWord:false },
+      { stimulus: "vistory", isWord:true }, { stimulus: "tomicy", isWord:false },
+      { stimulus: "bank", isWord:true }, { stimulus: "deripe", isWord:false },
+      { stimulus: "enjury", isWord:false }, { stimulus: "sentory", isWord:true },
+      { stimulus: "depeal", isWord:false }, { stimulus: "reveral", isWord:true },
+      { stimulus: "oritor", isWord:false }, { stimulus: "sendition", isWord:true },
+      { stimulus: "woman", isWord:true }, { stimulus: "camory", isWord:false },
+      { stimulus: "refective", isWord:true }, { stimulus: "dog", isWord:true },
+      { stimulus: "father", isWord:true }, { stimulus: "incention", isWord:true },
+      { stimulus: "polara", isWord:false }, { stimulus: "indident", isWord:true },
+      { stimulus: "child", isWord:true }, { stimulus: "avenda", isWord:false },
+      { stimulus: "perily", isWord:true }, { stimulus: "doctor", isWord:true },
+      { stimulus: "redition", isWord:true }, { stimulus: "building", isWord:true },
+      { stimulus: "inency", isWord:false }, { stimulus: "wall", isWord:true }
+    ],
+    [ // list 3
+      { stimulus: "dog", isWord:true }, { stimulus: "tomicy", isWord:false },
+      { stimulus: "perily", isWord:true }, { stimulus: "wall", isWord:true },
+      { stimulus: "intection", isWord:true }, { stimulus: "orimal", isWord:false },
+      { stimulus: "letter", isWord:true }, { stimulus: "sendition", isWord:true },
+      { stimulus: "child", isWord:true }, { stimulus: "vistory", isWord:true },
+      { stimulus: "street", isWord:true }, { stimulus: "reveral", isWord:true },
+      { stimulus: "camory", isWord:false }, { stimulus: "building", isWord:true },
+      { stimulus: "incention", isWord:true }, { stimulus: "enjury", isWord:false },
+      { stimulus: "woman", isWord:true }, { stimulus: "redition", isWord:true },
+      { stimulus: "doctor", isWord:true }, { stimulus: "oritor", isWord:false },
+      { stimulus: "indident", isWord:true }, { stimulus: "inency", isWord:false },
+      { stimulus: "bank", isWord:true }, { stimulus: "depeal", isWord:false },
+      { stimulus: "refective", isWord:true }, { stimulus: "deripe", isWord:false },
+      { stimulus: "father", isWord:true }, { stimulus: "sentory", isWord:true },
+      { stimulus: "polara", isWord:false }, { stimulus: "avenda", isWord:false }
+    ],
+    [ // list 4
+      { stimulus: "dog", isWord:true }, { stimulus: "incention", isWord:true },
+      { stimulus: "father", isWord:true }, { stimulus: "enjury", isWord:false },
+      { stimulus: "child", isWord:true }, { stimulus: "indident", isWord:true },
+      { stimulus: "building", isWord:true }, { stimulus: "vistory", isWord:true },
+      { stimulus: "doctor", isWord:true }, { stimulus: "redition", isWord:true },
+      { stimulus: "oritor", isWord:false }, { stimulus: "inency", isWord:false },
+      { stimulus: "refective", isWord:true }, { stimulus: "deripe", isWord:false },
+      { stimulus: "tomicy", isWord:false }, { stimulus: "avenda", isWord:false },
+      { stimulus: "street", isWord:true }, { stimulus: "reveral", isWord:true },
+      { stimulus: "wall", isWord:true }, { stimulus: "intection", isWord:true },
+      { stimulus: "woman", isWord:true }, { stimulus: "sentory", isWord:true },
+      { stimulus: "depeal", isWord:false }, { stimulus: "letter", isWord:true },
+      { stimulus: "orimal", isWord:false }, { stimulus: "polara", isWord:false },
+      { stimulus: "sendition", isWord:true }, { stimulus: "camory", isWord:false },
+      { stimulus: "perily", isWord:true }, { stimulus: "bank", isWord:true }
+    ]
+  ];
 
-    // SCT — {stimulus, isTarget}  (define your semantic rule; J = target, F = not-target)
-    const SCT_EN = [
-      [ {stimulus:"sentory",isTarget:false},{stimulus:"refective",isTarget:true},{stimulus:"incention",isTarget:false},{stimulus:"reveral",isTarget:true},{stimulus:"vistory",isTarget:true},{stimulus:"intection",isTarget:true},{stimulus:"perily",isTarget:false},{stimulus:"redition",isTarget:false},{stimulus:"indident",isTarget:false},{stimulus:"sendition",isTarget:true} ],
-      [ {stimulus:"redition",isTarget:false},{stimulus:"vistory",isTarget:true},{stimulus:"sentory",isTarget:false},{stimulus:"perily",isTarget:false},{stimulus:"incention",isTarget:false},{stimulus:"intection",isTarget:true},{stimulus:"refective",isTarget:true},{stimulus:"indident",isTarget:false},{stimulus:"sendition",isTarget:true},{stimulus:"reveral",isTarget:true} ],
-      [ {stimulus:"refective",isTarget:true},{stimulus:"redition",isTarget:false},{stimulus:"incention",isTarget:false},{stimulus:"intection",isTarget:true},{stimulus:"indident",isTarget:false},{stimulus:"sentory",isTarget:false},{stimulus:"perily",isTarget:false},{stimulus:"reveral",isTarget:true},{stimulus:"sendition",isTarget:true},{stimulus:"vistory",isTarget:true} ],
-      [ {stimulus:"incention",isTarget:false},{stimulus:"reveral",isTarget:true},{stimulus:"indident",isTarget:false},{stimulus:"sendition",isTarget:true},{stimulus:"vistory",isTarget:true},{stimulus:"perily",isTarget:false},{stimulus:"intection",isTarget:true},{stimulus:"refective",isTarget:true},{stimulus:"redition",isTarget:false},{stimulus:"sentory",isTarget:false} ]
-    ];
-    const SCT_ES = [
-      [ {stimulus:"comana",isTarget:true},{stimulus:"tadera",isTarget:false},{stimulus:"motura",isTarget:true},{stimulus:"verado",isTarget:true},{stimulus:"semado",isTarget:false},{stimulus:"mareja",isTarget:false},{stimulus:"momido",isTarget:false},{stimulus:"vinero",isTarget:true},{stimulus:"caneza",isTarget:true},{stimulus:"cadero",isTarget:false} ],
-      [ {stimulus:"mareja",isTarget:false},{stimulus:"comana",isTarget:true},{stimulus:"semado",isTarget:false},{stimulus:"momido",isTarget:false},{stimulus:"verado",isTarget:true},{stimulus:"vinero",isTarget:true},{stimulus:"motura",isTarget:true},{stimulus:"tadera",isTarget:false},{stimulus:"caneza",isTarget:true},{stimulus:"cadero",isTarget:false} ],
-      [ {stimulus:"momido",isTarget:false},{stimulus:"vinero",isTarget:true},{stimulus:"caneza",isTarget:true},{stimulus:"tadera",isTarget:false},{stimulus:"mareja",isTarget:false},{stimulus:"motura",isTarget:true},{stimulus:"verado",isTarget:true},{stimulus:"cadero",isTarget:false},{stimulus:"comana",isTarget:true},{stimulus:"semado",isTarget:true} ],
-      [ {stimulus:"semado",isTarget:false},{stimulus:"verado",isTarget:true},{stimulus:"cadero",isTarget:false},{stimulus:"vinero",isTarget:true},{stimulus:"motura",isTarget:true},{stimulus:"mareja",isTarget:false},{stimulus:"momido",isTarget:false},{stimulus:"tadera",isTarget:false},{stimulus:"caneza",isTarget:true},{stimulus:"comana",isTarget:true} ]
-    ];
+  const LDT_ES = [
+    [ // lista 1
+      { stimulus: "motilo", isWord:false }, { stimulus: "mareja", isWord:true },
+      { stimulus: "carta", isWord:true }, { stimulus: "vinero", isWord:true },
+      { stimulus: "mujer", isWord:true }, { stimulus: "semara", isWord:false },
+      { stimulus: "banco", isWord:true }, { stimulus: "edificio", isWord:true },
+      { stimulus: "verado", isWord:true }, { stimulus: "misico", isWord:false },
+      { stimulus: "perro", isWord:true }, { stimulus: "tadera", isWord:true },
+      { stimulus: "géneda", isWord:false }, { stimulus: "monero", isWord:false },
+      { stimulus: "momido", isWord:true }, { stimulus: "médico", isWord:true },
+      { stimulus: "accena", isWord:false }, { stimulus: "comana", isWord:true },
+      { stimulus: "pared", isWord:true }, { stimulus: "camano", isWord:false },
+      { stimulus: "cadero", isWord:true }, { stimulus: "niño", isWord:true },
+      { stimulus: "caneza", isWord:true }, { stimulus: "calle", isWord:true },
+      { stimulus: "madela", isWord:false }, { stimulus: "semado", isWord:true },
+      { stimulus: "dinuto", isWord:false }, { stimulus: "padre", isWord:true },
+      { stimulus: "motura", isWord:true }, { stimulus: "figuna", isWord:false }
+    ],
+    [ // lista 2
+      { stimulus: "camano",   isWord:false }, { stimulus: "momido", isWord:true },
+      { stimulus: "perro",  isWord:true }, { stimulus: "motura",  isWord:true },
+      { stimulus: "edificio", isWord:true }, { stimulus: "vinero", isWord:true },
+      { stimulus: "géneda", isWord:false }, { stimulus: "dinuto", isWord:false },
+      { stimulus: "tadera", isWord:true }, { stimulus: "pared", isWord:true },
+      { stimulus: "banco", isWord:true }, { stimulus: "semado", isWord:true },
+      { stimulus: "padre", isWord:true }, { stimulus: "semara", isWord:false },
+      { stimulus: "cadero", isWord:true }, { stimulus: "carta", isWord:true },
+      { stimulus: "mujer", isWord:true }, { stimulus: "comana", isWord:true },
+      { stimulus: "accena", isWord:false }, { stimulus: "verado", isWord:true },
+      { stimulus: "figuna", isWord:false }, { stimulus: "monero", isWord:false },
+      { stimulus: "caneza", isWord:true }, { stimulus: "madela", isWord:false },
+      { stimulus: "calle", isWord:true }, { stimulus: "motilo", isWord:false },
+      { stimulus: "mareja", isWord:true }, { stimulus: "médico", isWord:true },
+      { stimulus: "niño", isWord:true }, { stimulus: "misico", isWord:false }
+    ],
+    [ // lista 3
+      { stimulus: "edificio", isWord:true }, { stimulus: "géneda",  isWord:false },
+      { stimulus: "momido",isWord:true }, { stimulus: "perro", isWord:true },
+      { stimulus: "tadera", isWord:true }, { stimulus: "niño", isWord:true },
+      { stimulus: "caneza", isWord:true }, { stimulus: "dinuto", isWord:false },
+      { stimulus: "pared", isWord:true }, { stimulus: "semado", isWord:true },
+      { stimulus: "padre", isWord:true }, { stimulus: "verado", isWord:true },
+      { stimulus: "misico", isWord:false }, { stimulus: "camano", isWord:false },
+      { stimulus: "vinero", isWord:true }, { stimulus: "monero", isWord:false },
+      { stimulus: "calle", isWord:true }, { stimulus: "motilo", isWord:false },
+      { stimulus: "banco", isWord:true }, { stimulus: "semara", isWord:false },
+      { stimulus: "comana", isWord:true }, { stimulus: "figuna", isWord:false },
+      { stimulus: "cadero", isWord:true }, { stimulus: "mujer", isWord:true },
+      { stimulus: "mareja", isWord:true }, { stimulus: "accena", isWord:false },
+      { stimulus: "motura", isWord:true }, { stimulus: "carta", isWord:true },
+      { stimulus: "madela", isWord:false }, { stimulus: "médico", isWord:false } <!-- set to false (looked like a typo before) -->
+    ],
+    [ // lista 4
+      { stimulus: "edificio", isWord:true }, { stimulus: "perro",  isWord:true },
+      { stimulus: "tadera",isWord:true }, { stimulus: "médico", isWord:true },
+      { stimulus: "niño", isWord:true }, { stimulus: "momido", isWord:true },
+      { stimulus: "dinuto", isWord:false }, { stimulus: "cadero", isWord:true },
+      { stimulus: "carta", isWord:true }, { stimulus: "motura", isWord:true },
+      { stimulus: "calle", isWord:true }, { stimulus: "camano", isWord:false },
+      { stimulus: "caneza", isWord:true }, { stimulus: "padre", isWord:true },
+      { stimulus: "semado", isWord:true }, { stimulus: "pared", isWord:true },
+      { stimulus: "géneda", isWord:false }, { stimulus: "madela", isWord:false },
+      { stimulus: "figuna", isWord:false }, { stimulus: "comana", isWord:false },
+      { stimulus: "motilo", isWord:false }, { stimulus: "vinero", isWord:true },
+      { stimulus: "mujer", isWord:true }, { stimulus: "verado", isWord:true },
+      { stimulus: "accena", isWord:false }, { stimulus: "mareja", isWord:true },
+      { stimulus: "monero", isWord:false }, { stimulus: "banco", isWord:true },
+      { stimulus: "misico", isWord:false }, { stimulus: "semara", isWord:false }
+    ]
+  ];
 
-    // Vocabulary RECOGNITION (translation typed) — {prompt, answer}
-    // Show L2 prompt; participant types L1 translation (or vice versa). We'll record typed & optional correctness.
-    const RECOG_EN = [
-      [ {prompt:"redition",  answer:"agua"}, {prompt:"reveral", answer:"mano"}, {prompt:"refective", answer:"brazo"}, {prompt:"sentory", answer:"planta"}, {prompt:"intection", answer:"cabeza"}, {prompt:"incention", answer:"mesa"}, {prompt:"perily", answer:"puerta"}, {prompt:"sendition", answer:"ojo"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"indident", answer:"libro"} ],
-      [ {prompt:"perily",  answer:"puerta"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"indident", answer:"libro"}, {prompt:"reveral", answer:"mano"}, {prompt:"sentory", answer:"planta"}, {prompt:"redition", answer:"agua"}, {prompt:"sendition", answer:"ojo"}, {prompt:"intection", answer:"cabeza"}, {prompt:"refective", answer:"brazo"}, {prompt:"incention", answer:"mesa"} ],
-      [ {prompt:"indident",   answer:"libro"}, {prompt:"redition",   answer:"agua"}, {prompt:"reveral", answer:"mano"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"sentory", answer:"planta"}, {prompt:"perily", answer:"puerta"}, {prompt:"incention", answer:"mesa"}, {prompt:"intection", answer:"cabeza"}, {prompt:"refective", answer:"brazo"}, {prompt:"sendition", answer:"ojo"} ],
-      [ {prompt:"redition",   answer:"agua"}, {prompt:"refective",   answer:"brazo"}, {prompt:"sentory", answer:"planta"}, {prompt:"reveral", answer:"mano"}, {prompt:"indident", answer:"libro"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"perily", answer:"puerta"}, {prompt:"intection", answer:"cabeza"}, {prompt:"incention", answer:"mesa"}, {prompt:"sendition", answer:"ojo"} ]
-    ];
-    const RECOG_ES = [
-      [ {prompt:"semado",  answer:"book"}, {prompt:"comana", answer:"head"}, {prompt:"vinero", answer:"body"}, {prompt:"motura", answer:"arm"}, {prompt:"momido", answer:"plant"}, {prompt:"mareja", answer:"water"}, {prompt:"caneza", answer:"eye"}, {prompt:"cadero", answer:"door"}, {prompt:"tadera", answer:"table"}, {prompt:"verado", answer:"hand"} ],
-      [ {prompt:"cadero",  answer:"door"}, {prompt:"semado", answer:"book"}, {prompt:"caneza", answer:"eye"}, {prompt:"vinero", answer:"body"}, {prompt:"motura", answer:"arm"}, {prompt:"verado", answer:"hand"}, {prompt:"tadera", answer:"table"}, {prompt:"comana", answer:"head"}, {prompt:"momido", answer:"plant"}, {prompt:"mareja", answer:"water"} ],
-      [ {prompt:"momido",  answer:"plant"}, {prompt:"mareja", answer:"water"}, {prompt:"motura", answer:"arm"}, {prompt:"vinero", answer:"body"}, {prompt:"caneza", answer:"eye"}, {prompt:"tadera", answer:"table"}, {prompt:"cadero", answer:"door"}, {prompt:"verado", answer:"hand"}, {prompt:"semado", answer:"book"}, {prompt:"comana", answer:"head"} ],
-      [ {prompt:"tadera",  answer:"table"}, {prompt:"semado", answer:"book"}, {prompt:"cadero", answer:"door"}, {prompt:"caneza", answer:"eye"}, {prompt:"momido", answer:"plant"}, {prompt:"verado", answer:"hand"}, {prompt:"comana", answer:"head"}, {prompt:"motura", answer:"arm"}, {prompt:"mareja", answer:"water"}, {prompt:"vinero", answer:"body"} ]
-    ];
+  // SCT — {stimulus, isTarget}
+  const SCT_EN = [
+    [ {stimulus:"sentory",isTarget:false},{stimulus:"refective",isTarget:true},{stimulus:"incention",isTarget:false},{stimulus:"reveral",isTarget:true},{stimulus:"vistory",isTarget:true},{stimulus:"intection",isTarget:true},{stimulus:"perily",isTarget:false},{stimulus:"redition",isTarget:false},{stimulus:"indident",isTarget:false},{stimulus:"sendition",isTarget:true} ],
+    [ {stimulus:"redition",isTarget:false},{stimulus:"vistory",isTarget:true},{stimulus:"sentory",isTarget:false},{stimulus:"perily",isTarget:false},{stimulus:"incention",isTarget:false},{stimulus:"intection",isTarget:true},{stimulus:"refective",isTarget:true},{stimulus:"indident",isTarget:false},{stimulus:"sendition",isTarget:true},{stimulus:"reveral",isTarget:true} ],
+    [ {stimulus:"refective",isTarget:true},{stimulus:"redition",isTarget:false},{stimulus:"incention",isTarget:false},{stimulus:"intection",isTarget:true},{stimulus:"indident",isTarget:false},{stimulus:"sentory",isTarget:false},{stimulus:"perily",isTarget:false},{stimulus:"reveral",isTarget:true},{stimulus:"sendition",isTarget:true},{stimulus:"vistory",isTarget:true} ],
+    [ {stimulus:"incention",isTarget:false},{stimulus:"reveral",isTarget:true},{stimulus:"indident",isTarget:false},{stimulus:"sendition",isTarget:true},{stimulus:"vistory",isTarget:true},{stimulus:"perily",isTarget:false},{stimulus:"intection",isTarget:true},{stimulus:"refective",isTarget:true},{stimulus:"redition",isTarget:false},{stimulus:"sentory",isTarget:false} ]
+  ];
+  const SCT_ES = [
+    [ {stimulus:"comana",isTarget:true},{stimulus:"tadera",isTarget:false},{stimulus:"motura",isTarget:true},{stimulus:"verado",isTarget:true},{stimulus:"semado",isTarget:false},{stimulus:"mareja",isTarget:false},{stimulus:"momido",isTarget:false},{stimulus:"vinero",isTarget:true},{stimulus:"caneza",isTarget:true},{stimulus:"cadero",isTarget:false} ],
+    [ {stimulus:"mareja",isTarget:false},{stimulus:"comana",isTarget:true},{stimulus:"semado",isTarget:false},{stimulus:"momido",isTarget:false},{stimulus:"verado",isTarget:true},{stimulus:"vinero",isTarget:true},{stimulus:"motura",isTarget:true},{stimulus:"tadera",isTarget:false},{stimulus:"caneza",isTarget:true},{stimulus:"cadero",isTarget:false} ],
+    [ {stimulus:"momido",isTarget:false},{stimulus:"vinero",isTarget:true},{stimulus:"caneza",isTarget:true},{stimulus:"tadera",isTarget:false},{stimulus:"mareja",isTarget:false},{stimulus:"motura",isTarget:true},{stimulus:"verado",isTarget:true},{stimulus:"cadero",isTarget:false},{stimulus:"comana",isTarget:true},{stimulus:"semado",isTarget:true} ],
+    [ {stimulus:"semado",isTarget:false},{stimulus:"verado",isTarget:true},{stimulus:"cadero",isTarget:false},{stimulus:"vinero",isTarget:true},{stimulus:"motura",isTarget:true},{stimulus:"mareja",isTarget:false},{stimulus:"momido",isTarget:false},{stimulus:"tadera",isTarget:false},{stimulus:"caneza",isTarget:true},{stimulus:"comana",isTarget:true} ]
+  ];
 
-    // Vocabulary RECALL (translation typed) — {prompt, answer} (same structure; different item pool if needed)
-    const RECALL_EN = [
-      [ {prompt:"puerta",  answer:"perily"}, {prompt:"mano", answer:"reveral"}, {prompt:"brazo", answer:"refective"}, {prompt:"cabeza", answer:"intection"}, {prompt:"libro", answer:"indident"}, {prompt:"ojo", answer:"sendition"}, {prompt:"agua", answer:"redition"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"mesa", answer:"incention"}, {prompt:"planta", answer:"sentory"} ],
-      [ {prompt:"puerta",  answer:"perily"}, {prompt:"libro", answer:"indident"}, {prompt:"planta", answer:"sentory"}, {prompt:"agua", answer:"redition"}, {prompt:"mano", answer:"reveral"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"ojo", answer:"sendition"}, {prompt:"brazo", answer:"refective"}, {prompt:"mesa", answer:"incention"}, {prompt:"cabeza", answer:"intection"} ],
-      [ {prompt:"ojo",  answer:"sendition"}, {prompt:"agua", answer:"redition"}, {prompt:"mano", answer:"reveral"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"cabeza", answer:"intection"}, {prompt:"mesa", answer:"incention"}, {prompt:"puerta", answer:"perily"}, {prompt:"libro", answer:"indident"}, {prompt:"planta", answer:"sentory"}, {prompt:"brazo", answer:"refective"} ],
-      [ {prompt:"mesa",  answer:"incention"}, {prompt:"puerta", answer:"perily"}, {prompt:"libro", answer:"indident"}, {prompt:"mano", answer:"reveral"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"agua", answer:"redition"}, {prompt:"ojo", answer:"sendition"}, {prompt:"brazo", answer:"refective"}, {prompt:"planta", answer:"sentory"}, {prompt:"cabeza", answer:"intection"} ]
-    ];
-    const RECALL_ES = [
-      [ {prompt:"book",  answer:"semado"}, {prompt:"arm", answer:"motura"}, {prompt:"door", answer:"cadero"}, {prompt:"hand", answer:"verado"}, {prompt:"body", answer:"vinero"}, {prompt:"plant", answer:"momido"}, {prompt:"eye", answer:"caneza"}, {prompt:"table", answer:"tadera"}, {prompt:"head", answer:"comana"}, {prompt:"water", answer:"mareja"} ],
-      [ {prompt:"hand",  answer:"verado"}, {prompt:"head", answer:"comana"}, {prompt:"arm", answer:"motura"}, {prompt:"book", answer:"semado"}, {prompt:"door", answer:"cadero"}, {prompt:"water", answer:"mareja"}, {prompt:"table", answer:"tadera"}, {prompt:"plant", answer:"momido"}, {prompt:"eye", answer:"caneza"}, {prompt:"body", answer:"vinero"} ],
-      [ {prompt:"arm",  answer:"motura"}, {prompt:"table", answer:"tadera"}, {prompt:"hand", answer:"verado"}, {prompt:"eye", answer:"caneza"}, {prompt:"water", answer:"mareja"}, {prompt:"head", answer:"comana"}, {prompt:"door", answer:"cadero"}, {prompt:"body", answer:"vinero"}, {prompt:"book", answer:"semado"}, {prompt:"plant", answer:"momido"} ],
-      [ {prompt:"head",  answer:"comana"}, {prompt:"book", answer:"semado"}, {prompt:"plant", answer:"momido"}, {prompt:"eye", answer:"caneza"}, {prompt:"table", answer:"tadera"}, {prompt:"door", answer:"cadero"}, {prompt:"hand", answer:"verado"}, {prompt:"body", answer:"vinero"}, {prompt:"water", answer:"mareja"}, {prompt:"arm", answer:"motura"} ]
-    ];
+  const RECOG_EN = [
+    [ {prompt:"redition",  answer:"agua"}, {prompt:"reveral", answer:"mano"}, {prompt:"refective", answer:"brazo"}, {prompt:"sentory", answer:"planta"}, {prompt:"intection", answer:"cabeza"}, {prompt:"incention", answer:"mesa"}, {prompt:"perily", answer:"puerta"}, {prompt:"sendition", answer:"ojo"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"indident", answer:"libro"} ],
+    [ {prompt:"perily",  answer:"puerta"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"indident", answer:"libro"}, {prompt:"reveral", answer:"mano"}, {prompt:"sentory", answer:"planta"}, {prompt:"redition", answer:"agua"}, {prompt:"sendition", answer:"ojo"}, {prompt:"intection", answer:"cabeza"}, {prompt:"refective", answer:"brazo"}, {prompt:"incention", answer:"mesa"} ],
+    [ {prompt:"indident",   answer:"libro"}, {prompt:"redition",   answer:"agua"}, {prompt:"reveral", answer:"mano"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"sentory", answer:"planta"}, {prompt:"perily", answer:"puerta"}, {prompt:"incention", answer:"mesa"}, {prompt:"intection", answer:"cabeza"}, {prompt:"refective", answer:"brazo"}, {prompt:"sendition", answer:"ojo"} ],
+    [ {prompt:"redition",   answer:"agua"}, {prompt:"refective",   answer:"brazo"}, {prompt:"sentory", answer:"planta"}, {prompt:"reveral", answer:"mano"}, {prompt:"indident", answer:"libro"}, {prompt:"vistory", answer:"cuerpo"}, {prompt:"perily", answer:"puerta"}, {prompt:"intection", answer:"cabeza"}, {prompt:"incention", answer:"mesa"}, {prompt:"sendition", answer:"ojo"} ]
+  ];
+  const RECOG_ES = [
+    [ {prompt:"semado",  answer:"book"}, {prompt:"comana", answer:"head"}, {prompt:"vinero", answer:"body"}, {prompt:"motura", answer:"arm"}, {prompt:"momido", answer:"plant"}, {prompt:"mareja", answer:"water"}, {prompt:"caneza", answer:"eye"}, {prompt:"cadero", answer:"door"}, {prompt:"tadera", answer:"table"}, {prompt:"verado", answer:"hand"} ],
+    [ {prompt:"cadero",  answer:"door"}, {prompt:"semado", answer:"book"}, {prompt:"caneza", answer:"eye"}, {prompt:"vinero", answer:"body"}, {prompt:"motura", answer:"arm"}, {prompt:"verado", answer:"hand"}, {prompt:"tadera", answer:"table"}, {prompt:"comana", answer:"head"}, {prompt:"momido", answer:"plant"}, {prompt:"mareja", answer:"water"} ],
+    [ {prompt:"momido",  answer:"plant"}, {prompt:"mareja", answer:"water"}, {prompt:"motura", answer:"arm"}, {prompt:"vinero", answer:"body"}, {prompt:"caneza", answer:"eye"}, {prompt:"tadera", answer:"table"}, {prompt:"cadero", answer:"door"}, {prompt:"verado", answer:"hand"}, {prompt:"semado", answer:"book"}, {prompt:"comana", answer:"head"} ],
+    [ {prompt:"tadera",  answer:"table"}, {prompt:"semado", answer:"book"}, {prompt:"cadero", answer:"door"}, {prompt:"caneza", answer:"eye"}, {prompt:"momido", answer:"plant"}, {prompt:"verado", answer:"hand"}, {prompt:"comana", answer:"head"}, {prompt:"motura", answer:"arm"}, {prompt:"mareja", answer:"water"}, {prompt:"vinero", answer:"body"} ]
+  ];
 
-  // practice sets
+  const RECALL_EN = [
+    [ {prompt:"puerta",  answer:"perily"}, {prompt:"mano", answer:"reveral"}, {prompt:"brazo", answer:"refective"}, {prompt:"cabeza", answer:"intection"}, {prompt:"libro", answer:"indident"}, {prompt:"ojo", answer:"sendition"}, {prompt:"agua", answer:"redition"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"mesa", answer:"incention"}, {prompt:"planta", answer:"sentory"} ],
+    [ {prompt:"puerta",  answer:"perily"}, {prompt:"libro", answer:"indident"}, {prompt:"planta", answer:"sentory"}, {prompt:"agua", answer:"redition"}, {prompt:"mano", answer:"reveral"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"ojo", answer:"sendition"}, {prompt:"brazo", answer:"refective"}, {prompt:"mesa", answer:"incention"}, {prompt:"cabeza", answer:"intection"} ],
+    [ {prompt:"ojo",  answer:"sendition"}, {prompt:"agua", answer:"redition"}, {prompt:"mano", answer:"reveral"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"cabeza", answer:"intection"}, {prompt:"mesa", answer:"incention"}, {prompt:"puerta", answer:"perily"}, {prompt:"libro", answer:"indident"}, {prompt:"planta", answer:"sentory"}, {prompt:"brazo", answer:"refective"} ],
+    [ {prompt:"mesa",  answer:"incention"}, {prompt:"puerta", answer:"perily"}, {prompt:"libro", answer:"indident"}, {prompt:"mano", answer:"reveral"}, {prompt:"cuerpo", answer:"vistory"}, {prompt:"agua", answer:"redition"}, {prompt:"ojo", answer:"sendition"}, {prompt:"brazo", answer:"refective"}, {prompt:"planta", answer:"sentory"}, {prompt:"cabeza", answer:"intection"} ]
+  ];
+  const RECALL_ES = [
+    [ {prompt:"book",  answer:"semado"}, {prompt:"arm", answer:"motura"}, {prompt:"door", answer:"cadero"}, {prompt:"hand", answer:"verado"}, {prompt:"body", answer:"vinero"}, {prompt:"plant", answer:"momido"}, {prompt:"eye", answer:"caneza"}, {prompt:"table", answer:"tadera"}, {prompt:"head", answer:"comana"}, {prompt:"water", answer:"mareja"} ],
+    [ {prompt:"hand",  answer:"verado"}, {prompt:"head", answer:"comana"}, {prompt:"arm", answer:"motura"}, {prompt:"book", answer:"semado"}, {prompt:"door", answer:"cadero"}, {prompt:"water", answer:"mareja"}, {prompt:"table", answer:"tadera"}, {prompt:"plant", answer:"momido"}, {prompt:"eye", answer:"caneza"}, {prompt:"body", answer:"vinero"} ],
+    [ {prompt:"arm",  answer:"motura"}, {prompt:"table", answer:"tadera"}, {prompt:"hand", answer:"verado"}, {prompt:"eye", answer:"caneza"}, {prompt:"water", answer:"mareja"}, {prompt:"head", answer:"comana"}, {prompt:"door", answer:"cadero"}, {prompt:"body", answer:"vinero"}, {prompt:"book", answer:"semado"}, {prompt:"plant", answer:"momido"} ],
+    [ {prompt:"head",  answer:"comana"}, {prompt:"book", answer:"semado"}, {prompt:"plant", answer:"momido"}, {prompt:"eye", answer:"caneza"}, {prompt:"table", answer:"tadera"}, {prompt:"door", answer:"cadero"}, {prompt:"hand", answer:"verado"}, {prompt:"body", answer:"vinero"}, {prompt:"water", answer:"mareja"}, {prompt:"arm", answer:"motura"} ]
+  ];
+
+  // ---------- practice ----------
   const PRACT_LDT_EN = [ {stimulus:"cat",isWord:true},{stimulus:"mabro",isWord:false},{stimulus:"felch",isWord:false},{stimulus:"lemon",isWord:true} ];
   const PRACT_LDT_ES = [ {stimulus:"gato",isWord:true},{stimulus:"priba",isWord:false},{stimulus:"coné",isWord:false},{stimulus:"limón",isWord:true} ];
   const PRACT_SCT_EN = [ {stimulus:"mouth",isTarget:true},{stimulus:"rat",isTarget:false},{stimulus:"button",isTarget:false},{stimulus:"leg",isTarget:true} ];
   const PRACT_SCT_ES = [ {stimulus:"boca",isTarget:true},{stimulus:"rata",isTarget:false},{stimulus:"botón",isTarget:false},{stimulus:"pierna",isTarget:true} ];
   const PRACT_RECOG_EN = [ {prompt:"cat",answer:"gato"},{prompt:"car",answer:"carro"} ];
   const PRACT_RECOG_ES = [ {prompt:"gato",answer:"cat"},{prompt:"carro",answer:"car"} ];
-  const PRACT_RECALL_EN= [ {prompt:"gato",answer:"cat"},{prompt:"carro",answer:"car"}  ];
+  const PRACT_RECALL_EN= [ {prompt:"gato",answer:"cat"},{prompt:"carro",answer:"car"} ];
   const PRACT_RECALL_ES= [ {prompt:"cat",answer:"gato"},{prompt:"car",answer:"carro"} ];
 
-  // helpers
+  // ---------- helpers ----------
+  function showMsg(html){
+    const t = document.getElementById('jspsych-target');
+    t.innerHTML = `<div class="msg">${html}</div>`;
+  }
+
+  // accent/diacritic-insensitive comparison with broad browser support
+  function stripDiacritics(s){
+    if (!s) return "";
+    const nfd = s.toString().normalize('NFD');
+    // safest range for combining marks if \p{Diacritic} unsupported:
+    return nfd.replace(/[\u0300-\u036f]/g, '');
+  }
+  function norm(s){
+    return stripDiacritics(s).trim().toLowerCase();
+  }
+
   const instr = (lang, html) => ({ type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">${html}</div>`, choices:"ALL_KEYS", data:{lang, phase:"instructions"} });
   const fix   = (lang,task)=>({ type: jsPsychHtmlKeyboardResponse, stimulus:"+", choices:"NO_KEYS", trial_duration:800, data:{lang, task, phase:"fix"} });
+
   function blockLDT(lang, bank, label="LDT"){
     return {
-      timeline:[ fix(lang,label), {
+      timeline: [ fix(lang,label), {
         type: jsPsychHtmlKeyboardResponse,
         stimulus: jsPsych.timelineVariable('stimulus'),
         choices: ['f','j'],
         data: { lang, task:label, stim: jsPsych.timelineVariable('stimulus'), isWord: jsPsych.timelineVariable('isWord') },
-        on_finish: d => { const corr = d.isWord ? 'j':'f'; d.correct = (d.response===corr); }
-      }],
+        on_finish: d => { const corr = d.isWord ? 'j' : 'f'; d.correct = (d.response===corr); }
+      } ],
       timeline_variables: bank, randomize_order:false
     };
   }
   function blockSCT(lang, bank, label="SCT"){
     return {
-      timeline:[ fix(lang,label), {
+      timeline: [ fix(lang,label), {
         type: jsPsychHtmlKeyboardResponse,
         stimulus: jsPsych.timelineVariable('stimulus'),
         choices: ['f','j'],
         data: { lang, task:label, stim: jsPsych.timelineVariable('stimulus'), isTarget: jsPsych.timelineVariable('isTarget') },
-        on_finish: d => { const corr = d.isTarget ? 'j':'f'; d.correct = (d.response===corr); }
-      }],
+        on_finish: d => { const corr = d.isTarget ? 'j' : 'f'; d.correct = (d.response===corr); }
+      } ],
       timeline_variables: bank, randomize_order:false
     };
   }
-  function norm(s){ return (s||"").toString().trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,''); }
   function blockTyped(lang, bank, label){
     return {
-      timeline:[{
+      timeline: [ {
         type: jsPsychSurveyHtmlForm,
         html: () => {
           const p = jsPsych.timelineVariable('prompt');
@@ -265,20 +289,35 @@ const LDT_EN = [
         },
         data: { lang, task:label, prompt: jsPsych.timelineVariable('prompt'), answer: jsPsych.timelineVariable('answer') },
         on_load: () => { const i = document.querySelector('input[name=resp]'); if (i) i.focus(); },
-        on_finish: d => { const r = (d.response && d.response.resp) ? d.response.resp : ""; d.typed = r; if (d.answer!=null) d.typed_correct = (norm(r)===norm(d.answer)); }
-      }],
+        on_finish: d => {
+          const r = (d.response && d.response.resp) ? d.response.resp : "";
+          d.typed = r;
+          if (typeof d.answer !== 'undefined' && d.answer !== null) {
+            d.typed_correct = (norm(r) === norm(d.answer));
+          }
+        }
+      } ],
       timeline_variables: bank, randomize_order:false
     };
   }
 
-  // init
+  // ---------- init ----------
+  if (typeof initJsPsych !== 'function') {
+    showMsg('Failed to load jsPsych. Check network/CDN access.');
+    return;
+  }
   const jsPsych = initJsPsych({ display_element: 'jspsych-target' });
 
-  // select banks per language/list
-  const LDT_BANK   = (RUN_LANG==='ES'? LDT_ES : LDT_EN)[LIST_LDT-1];
-  const SCT_BANK   = (RUN_LANG==='ES'? SCT_ES : SCT_EN)[LIST_SCT-1];
-  const RECOG_BANK = (RUN_LANG==='ES'? RECOG_ES : RECOG_EN)[LIST_RECOG-1];
-  const RECALL_BANK= (RUN_LANG==='ES'? RECALL_ES: RECALL_EN)[LIST_RECALL-1];
+  // select banks per language/list with guards
+  const LDT_BANK   = (RUN_LANG==='ES' ? LDT_ES : LDT_EN)[LIST_LDT-1];
+  const SCT_BANK   = (RUN_LANG==='ES' ? SCT_ES : SCT_EN)[LIST_SCT-1];
+  const RECOG_BANK = (RUN_LANG==='ES' ? RECOG_ES : RECOG_EN)[LIST_RECOG-1];
+  const RECALL_BANK= (RUN_LANG==='ES' ? RECALL_ES: RECALL_EN)[LIST_RECALL-1];
+
+  if (!Array.isArray(LDT_BANK) || !Array.isArray(SCT_BANK) || !Array.isArray(RECOG_BANK) || !Array.isArray(RECALL_BANK)) {
+    showMsg('Invalid list index or missing stimuli. Check URL parameters and arrays.');
+    return;
+  }
 
   const hdr = (RUN_LANG==='ES') ? "Bloque en <b>español</b>" : "Block in <b>English</b>";
 
@@ -287,25 +326,25 @@ const LDT_EN = [
 
     // LDT
     instr(RUN_LANG, `${hdr}<br><br><b>Lexical Decision</b><br>F = NOT a word, J = IS a word.<br><i>Press any key to begin practice.</i>`),
-    blockLDT(RUN_LANG, (RUN_LANG==='ES'? PRACT_LDT_ES : PRACT_LDT_EN), "LDT_practice"),
+    blockLDT(RUN_LANG, (RUN_LANG==='ES' ? PRACT_LDT_ES : PRACT_LDT_EN), "LDT_practice"),
     instr(RUN_LANG, `Now the real LDT begins. Press any key.`),
     blockLDT(RUN_LANG, LDT_BANK, "LDT"),
 
     // SCT
     instr(RUN_LANG, `${hdr}<br><br><b>Semantic Categorization</b><br>J = TARGET category, F = not target.<br><i>Press any key to begin practice.</i>`),
-    blockSCT(RUN_LANG, (RUN_LANG==='ES'? PRACT_SCT_ES : PRACT_SCT_EN), "SCT_practice"),
+    blockSCT(RUN_LANG, (RUN_LANG==='ES' ? PRACT_SCT_ES : PRACT_SCT_EN), "SCT_practice"),
     instr(RUN_LANG, `Now the real SCT begins. Press any key.`),
     blockSCT(RUN_LANG, SCT_BANK, "SCT"),
 
     // Recognition (typed)
     instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recognition (translation)</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
-    blockTyped(RUN_LANG, (RUN_LANG==='ES'? PRACT_RECOG_ES : PRACT_RECOG_EN), "Recognition_practice"),
+    blockTyped(RUN_LANG, (RUN_LANG==='ES' ? PRACT_RECOG_ES : PRACT_RECOG_EN), "Recognition_practice"),
     instr(RUN_LANG, `Now the real recognition block begins. Press any key.`),
     blockTyped(RUN_LANG, RECOG_BANK, "Recognition"),
 
     // Recall (typed)
     instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recall (translation)</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
-    blockTyped(RUN_LANG, (RUN_LANG==='ES'? PRACT_RECALL_ES : PRACT_RECALL_EN), "Recall_practice"),
+    blockTyped(RUN_LANG, (RUN_LANG==='ES' ? PRACT_RECALL_ES : PRACT_RECALL_EN), "Recall_practice"),
     instr(RUN_LANG, `Now the real recall block begins. Press any key.`),
     blockTyped(RUN_LANG, RECALL_BANK, "Recall"),
 
@@ -332,7 +371,14 @@ const LDT_EN = [
     const csv = header + rows.join("\n");
 
     // post back to Qualtrics parent
-    window.parent.postMessage({ type:'jspsych-data', csv, lang: RUN_LANG }, '*');
+    try {
+      window.parent.postMessage({ type:'jspsych-data', csv, lang: RUN_LANG }, '*');
+    } catch(e) {
+      console.warn('postMessage failed:', e);
+    }
+
+    // show a clear completion message when opened directly
+    document.body.innerHTML = '<div class="msg" style="text-align:center">Task finished. You may return to the survey.</div>';
   });
 })();
 </script>
