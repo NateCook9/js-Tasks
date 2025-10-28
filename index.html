@@ -45,6 +45,7 @@
   const LIST_RECALL = clamp(q.get('list_recall') || q.get('list_id') || 1);
   const RESP_ID     = q.get('rid') || '';
 
+  
   // ---------- stimuli (your arrays unchanged, except tiny typo fix noted below) ----------
   const LDT_EN = [
     [ // list 1
@@ -284,16 +285,10 @@
   }
 function blockTyped(lang, bank, label){
   return {
-    timeline: [ {
+    timeline: [{
       type: jsPsychSurveyHtmlForm,
       html: () => {
-        // Be defensive: always coerce to a clean string
-        let p = jsPsych.timelineVariable('prompt');
-        if (p && typeof p === 'object') {
-          // if somehow an object slipped through, try common keys or stringify
-          p = p.prompt ?? p.text ?? JSON.stringify(p);
-        }
-        p = (p == null) ? '' : String(p);
+        const p = jsPsych.timelineVariable('prompt') || "";
         return `
           <div>
             <div class="stim">${p}</div>
@@ -301,28 +296,28 @@ function blockTyped(lang, bank, label){
             <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
           </div>`;
       },
-      data: {
-        lang, task: label,
-        prompt: jsPsych.timelineVariable('prompt'),
-        answer: jsPsych.timelineVariable('answer')
-      },
-      on_load: () => {
-        const i = document.querySelector('input[name=resp]');
-        if (i) i.focus();
-      },
+      data: { lang, task:label, prompt: jsPsych.timelineVariable('prompt'), answer: jsPsych.timelineVariable('answer') },
+      on_load: () => { const i = document.querySelector('input[name=resp]'); if (i) i.focus(); },
       on_finish: d => {
         const r = (d.response && d.response.resp) ? d.response.resp : "";
         d.typed = r;
-        if (d.answer != null) {
-          d.typed_correct = (norm(r) === norm(d.answer));
-        }
+        if (d.answer != null) d.typed_correct = (norm(r) === norm(d.answer));
       }
-    } ],
-    timeline_variables: bank,   // array of {prompt, answer}
+    }],
+    timeline_variables: bank,
     randomize_order: false
   };
 }
 
+  
+function sanitizeTypedBank(bank){
+  // Ensure each item has string prompt and keep answer as-is (can be null)
+  return bank.map(it => ({
+    prompt: (it && it.prompt != null) ? String(it.prompt) : "",
+    answer: (it && it.answer != null) ? String(it.answer) : null
+  }));
+}
+  
   // ---------- init ----------
   if (typeof initJsPsych !== 'function') {
     showMsg('Failed to load jsPsych. Check network/CDN access.');
@@ -333,8 +328,8 @@ function blockTyped(lang, bank, label){
   // select banks per language/list with guards
   const LDT_BANK   = (RUN_LANG==='ES' ? LDT_ES : LDT_EN)[LIST_LDT-1];
   const SCT_BANK   = (RUN_LANG==='ES' ? SCT_ES : SCT_EN)[LIST_SCT-1];
-  const RECOG_BANK = (RUN_LANG==='ES' ? RECOG_ES : RECOG_EN)[LIST_RECOG-1];
-  const RECALL_BANK= (RUN_LANG==='ES' ? RECALL_ES: RECALL_EN)[LIST_RECALL-1];
+  const RECOG_BANK = sanitizeTypedBank(RUN_LANG==='ES' ? RECOG_ES : RECOG_EN)[LIST_RECOG-1];
+  const RECALL_BANK= sanitizeTypedBank(RUN_LANG==='ES' ? RECALL_ES: RECALL_EN)[LIST_RECALL-1];
 
   if (!Array.isArray(LDT_BANK) || !Array.isArray(SCT_BANK) || !Array.isArray(RECOG_BANK) || !Array.isArray(RECALL_BANK)) {
     showMsg('Invalid list index or missing stimuli. Check URL parameters and arrays.');
