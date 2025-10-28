@@ -167,7 +167,7 @@
       { stimulus: "cadero", isWord:true }, { stimulus: "mujer", isWord:true },
       { stimulus: "mareja", isWord:true }, { stimulus: "accena", isWord:false },
       { stimulus: "motura", isWord:true }, { stimulus: "carta", isWord:true },
-      { stimulus: "madela", isWord:false }, { stimulus: "médico", isWord:false } <!-- set to false (looked like a typo before) -->
+      { stimulus: "madela", isWord:false }, { stimulus: "médico", isWord:false } 
     ],
     [ // lista 4
       { stimulus: "edificio", isWord:true }, { stimulus: "perro",  isWord:true },
@@ -282,27 +282,46 @@
       timeline_variables: bank, randomize_order:false
     };
   }
-  function blockTyped(lang, bank, label){
-    return {
-      timeline: [ {
-        type: jsPsychSurveyHtmlForm,
-        html: () => {
-          const p = jsPsych.timelineVariable('prompt');
-          return `<div><div class="stim">${p}</div><input class="typed-input" type="text" name="resp" autocomplete="off" autofocus /></div>`;
-        },
-        data: { lang, task:label, prompt: jsPsych.timelineVariable('prompt'), answer: jsPsych.timelineVariable('answer') },
-        on_load: () => { const i = document.querySelector('input[name=resp]'); if (i) i.focus(); },
-        on_finish: d => {
-          const r = (d.response && d.response.resp) ? d.response.resp : "";
-          d.typed = r;
-          if (typeof d.answer !== 'undefined' && d.answer !== null) {
-            d.typed_correct = (norm(r) === norm(d.answer));
-          }
+function blockTyped(lang, bank, label){
+  return {
+    timeline: [ {
+      type: jsPsychSurveyHtmlForm,
+      html: () => {
+        // Be defensive: always coerce to a clean string
+        let p = jsPsych.timelineVariable('prompt');
+        if (p && typeof p === 'object') {
+          // if somehow an object slipped through, try common keys or stringify
+          p = p.prompt ?? p.text ?? JSON.stringify(p);
         }
-      } ],
-      timeline_variables: bank, randomize_order:false
-    };
-  }
+        p = (p == null) ? '' : String(p);
+        return `
+          <div>
+            <div class="stim">${p}</div>
+            <input class="typed-input" type="text" name="resp" autocomplete="off" autofocus />
+            <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
+          </div>`;
+      },
+      data: {
+        lang, task: label,
+        prompt: jsPsych.timelineVariable('prompt'),
+        answer: jsPsych.timelineVariable('answer')
+      },
+      on_load: () => {
+        const i = document.querySelector('input[name=resp]');
+        if (i) i.focus();
+      },
+      on_finish: d => {
+        const r = (d.response && d.response.resp) ? d.response.resp : "";
+        d.typed = r;
+        if (d.answer != null) {
+          d.typed_correct = (norm(r) === norm(d.answer));
+        }
+      }
+    } ],
+    timeline_variables: bank,   // array of {prompt, answer}
+    randomize_order: false
+  };
+}
 
   // ---------- init ----------
   if (typeof initJsPsych !== 'function') {
@@ -325,33 +344,33 @@
   const hdr = (RUN_LANG==='ES') ? "Bloque en <b>español</b>" : "Block in <b>English</b>";
 
   const timeline = [
-    { type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">Press any key to begin (${RUN_LANG}).</div>`, choices:"ALL_KEYS", data:{phase:"intro", lang:RUN_LANG, rid: RESP_ID} },
+    { type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">Click here and press any key to begin (${RUN_LANG}).</div>`, choices:"ALL_KEYS", data:{phase:"intro", lang:RUN_LANG, rid: RESP_ID} },
 
     // LDT
-    instr(RUN_LANG, `${hdr}<br><br><b>Lexical Decision</b><br>F = NOT a word, J = IS a word.<br><i>Press any key to begin practice.</i>`),
+    instr(RUN_LANG, `${hdr}<br><br><b>Word Decision Task</b><br>Decide if each presented string of letters is a word or not.</b><br>Please treat key vocabulary words from the fill-in-the-blank reading as real words. Make this decision as quickly and as accurately as you can.</b><br>F = NOT a word, J = IS a word.<br><i>Press any key to begin practice.</i>`),
     blockLDT(RUN_LANG, (RUN_LANG==='ES' ? PRACT_LDT_ES : PRACT_LDT_EN), "LDT_practice"),
-    instr(RUN_LANG, `Now the real LDT begins. Press any key.`),
+    instr(RUN_LANG, `Now the real task begins. Remember: F = NOT a word, J = IS a word. Press any key to begin.`),
     blockLDT(RUN_LANG, LDT_BANK, "LDT"),
 
     // SCT
-    instr(RUN_LANG, `${hdr}<br><br><b>Semantic Categorization</b><br>J = TARGET category, F = not target.<br><i>Press any key to begin practice.</i>`),
+    instr(RUN_LANG, `${hdr}<br><br><b>Category Judgement Task</b><br>Decide if each word's meaning belongs to the target category = BODY or BODY PART.</b><br>J = TARGET category, F = not target.<br><i>Press any key to begin practice.</i>`),
     blockSCT(RUN_LANG, (RUN_LANG==='ES' ? PRACT_SCT_ES : PRACT_SCT_EN), "SCT_practice"),
-    instr(RUN_LANG, `Now the real SCT begins. Press any key.`),
+    instr(RUN_LANG, `Now the real category judgement task begins. Remember: the target category = BODY or BODY PART.</b><br>J = TARGET category, F = not target.Press any key to begin.`),
     blockSCT(RUN_LANG, SCT_BANK, "SCT"),
 
     // Recognition (typed)
-    instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recognition (translation)</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
+    instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recognition Translation</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
     blockTyped(RUN_LANG, (RUN_LANG==='ES' ? PRACT_RECOG_ES : PRACT_RECOG_EN), "Recognition_practice"),
     instr(RUN_LANG, `Now the real recognition block begins. Press any key.`),
     blockTyped(RUN_LANG, RECOG_BANK, "Recognition"),
 
     // Recall (typed)
-    instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recall (translation)</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
+    instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recall Translation</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
     blockTyped(RUN_LANG, (RUN_LANG==='ES' ? PRACT_RECALL_ES : PRACT_RECALL_EN), "Recall_practice"),
     instr(RUN_LANG, `Now the real recall block begins. Press any key.`),
     blockTyped(RUN_LANG, RECALL_BANK, "Recall"),
 
-    { type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">Thanks! You finished (${RUN_LANG}).</div>`, choices:"ALL_KEYS", data:{phase:"end", lang:RUN_LANG} }
+    { type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">Thanks! You finished this task (${RUN_LANG}).</div>`, choices:"ALL_KEYS", data:{phase:"end", lang:RUN_LANG} }
   ];
 
   jsPsych.run(timeline);
