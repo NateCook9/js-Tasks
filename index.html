@@ -35,7 +35,8 @@
 (function(){
   // ---------- read URL params from Qualtrics ----------
   const q = new URLSearchParams(location.search);
-  const RUN_LANG    = (q.get('run_lang') || 'EN').toUpperCase(); // EN or ES
+  const RUN_LANG =
+    ((q.get('run_lang') || q.get('lang') || '').trim().toUpperCase()) || 'EN';
   const LISTS       = 4; // you are using 4 lists per task
   const clamp = v => {
     const n = parseInt(v, 10);
