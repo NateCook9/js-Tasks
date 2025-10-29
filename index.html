@@ -48,11 +48,6 @@
   const RESP_ID     = q.get('rid') || '';
 
   console.log({ RUN_LANG, LIST_LDT, LIST_SCT, LIST_RECOG, LIST_RECALL, RESP_ID });
-  console.log('TYPED RAW VARS:', {
-    html_q: jsPsych.timelineVariable('q'),
-    data_q: jsPsych.timelineVariable('q'),
-    data_ans: jsPsych.timelineVariable('ans')
-});
 
 
   
@@ -299,12 +294,16 @@ function blockTyped(lang, bank, label){
     timeline: [{
       type: jsPsychSurveyHtmlForm,
       html: () => {
-        // Be defensive: handle if jsPsych.timelineVariable('q') yields an object
-        const raw = jsPsych.timelineVariable('q');
+        // DEBUG: see exactly what jsPsych gives us for this trial
+        const rawQ   = jsPsych.timelineVariable('q');
+        const rawAns = jsPsych.timelineVariable('ans');
+        console.log('[blockTyped] rawQ=', rawQ, 'rawAns=', rawAns);
+
+        // Force a clean string for the prompt no matter what we get
         const promptText =
-          (typeof raw === 'string') ? raw :
-          (raw && typeof raw === 'object' && typeof raw.q === 'string') ? raw.q :
-          String(raw ?? '');
+          (typeof rawQ === 'string') ? rawQ :
+          (rawQ && typeof rawQ === 'object' && typeof rawQ.q === 'string') ? rawQ.q :
+          String(rawQ ?? '');
 
         return `
           <div>
@@ -313,7 +312,7 @@ function blockTyped(lang, bank, label){
             <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
           </div>`;
       },
-      // keep the non-conflicting keys
+      // store what we got (don’t assume types)
       data: {
         lang,
         task: label,
@@ -333,11 +332,10 @@ function blockTyped(lang, bank, label){
         const r = (d.response && d.response.resp) ? d.response.resp : "";
         d.typed = r;
 
-        // Normalize answer defensively too
+        // Normalize the answer defensively
         const rawAns = (typeof d.ans === 'string') ? d.ans
                     : (d.ans && typeof d.ans === 'object' && typeof d.ans.ans === 'string') ? d.ans.ans
                     : (d.ans ?? "");
-
         if (rawAns !== "") d.typed_correct = (norm(r) === norm(rawAns));
       }
     }],
@@ -346,15 +344,17 @@ function blockTyped(lang, bank, label){
   };
 }
 
+
   
 function sanitizeTypedBank(bank){
-  // Ensure each item has string prompt and keep answer as-is (can be null)
-  // Map to non-conflicting keys: q (prompt), ans (answer)
   return bank.map(it => ({
-    q:   (it && it.prompt != null) ? String(it.prompt) : (it && it.q != null ? String(it.q) : ""),
-    ans: (it && it.answer != null) ? String(it.answer) : (it && it.ans != null ? String(it.ans) : null)
+    q:   (it && it.prompt != null) ? String(it.prompt)
+       : (it && it.q != null)      ? String(it.q) : "",
+    ans: (it && it.answer != null) ? String(it.answer)
+       : (it && it.ans != null)    ? String(it.ans) : ""   
   }));
 }
+
   
   // ---------- init ----------
   if (typeof initJsPsych !== 'function') {
@@ -370,7 +370,10 @@ function sanitizeTypedBank(bank){
         const task = t.task || (t.phase || '');
         const stim = t.stim || t.stimulus || t.q || '';
         const rt   = (typeof t.rt==='number') ? t.rt : '';
-        const resp = (typeof t.response!=='undefined') ? t.response : '';
+        const respRaw = t.response;
+        const resp = (respRaw == null) ? ''
+                  : (typeof respRaw === 'object') ? JSON.stringify(respRaw)
+                  : String(respRaw);
         const typed= (typeof t.typed!=='undefined') ? t.typed : '';
         const corr = (typeof t.correct!=='undefined') ? t.correct : (typeof t.typed_correct!=='undefined' ? t.typed_correct : '');
         const isWord   = (typeof t.isWord!=='undefined')   ? t.isWord   : '';
