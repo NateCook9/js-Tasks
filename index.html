@@ -329,7 +329,7 @@ function sanitizeTypedBank(bank){
   // select banks per language/list with guards
   const LDT_BANK   = (RUN_LANG==='ES' ? LDT_ES : LDT_EN)[LIST_LDT-1];
   const SCT_BANK   = (RUN_LANG==='ES' ? SCT_ES : SCT_EN)[LIST_SCT-1];
-  const RECOG_BANK = sanitizeTypedBank(RUN_LANG==='ES' ? RECOG_ES : RECOG_EN)[LIST_RECOG-1]);
+  const RECOG_BANK = sanitizeTypedBank((RUN_LANG==='ES' ? RECOG_ES : RECOG_EN)[LIST_RECOG-1]);
   const RECALL_BANK= sanitizeTypedBank((RUN_LANG==='ES' ? RECALL_ES: RECALL_EN)[LIST_RECALL-1]);
 
   if (!Array.isArray(LDT_BANK) || !Array.isArray(SCT_BANK) || !Array.isArray(RECOG_BANK) || !Array.isArray(RECALL_BANK)) {
