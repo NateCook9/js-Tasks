@@ -293,7 +293,7 @@ function blockTyped(lang, bank, label){
     timeline: [{
       type: jsPsychSurveyHtmlForm,
       html: () => {
-        const p = jsPsych.timelineVariable('prompt') || "";
+        const p = jsPsych.timelineVariable('q') || "";
         return `
           <div>
             <div class="stim">${p}</div>
@@ -301,12 +301,18 @@ function blockTyped(lang, bank, label){
             <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
           </div>`;
       },
-      data: { lang, task:label, prompt: jsPsych.timelineVariable('prompt'), answer: jsPsych.timelineVariable('answer') },
-      on_load: () => { const i = document.querySelector('input[name=resp]'); if (i) i.focus(); },
+      data: { lang, task:label, prompt: jsPsych.timelineVariable('q'), answer: jsPsych.timelineVariable('answer') },
+      on_load: () => { const i = document.querySelector('input[name=resp]'); 
+        if (i) {
+          if (document.activeElement && document.activeElement !== i) {
+            try { document.activeElement.blur(); } catch(_) {}
+          }
+          requestAnimationFrame(() => i.focus({ preventScroll: true }));
+        }
       on_finish: d => {
         const r = (d.response && d.response.resp) ? d.response.resp : "";
         d.typed = r;
-        if (d.answer != null) d.typed_correct = (norm(r) === norm(d.answer));
+        if (d.ans != null) d.typed_correct = (norm(r) === norm(d.ans));
       }
     }],
     timeline_variables: bank,
@@ -317,9 +323,10 @@ function blockTyped(lang, bank, label){
   
 function sanitizeTypedBank(bank){
   // Ensure each item has string prompt and keep answer as-is (can be null)
+  // Map to non-conflicting keys: q (prompt), ans (answer)
   return bank.map(it => ({
-    prompt: (it && it.prompt != null) ? String(it.prompt) : "",
-    answer: (it && it.answer != null) ? String(it.answer) : null
+    q:   (it && it.prompt != null) ? String(it.prompt) : (it && it.q != null ? String(it.q) : ""),
+    ans: (it && it.answer != null) ? String(it.answer) : (it && it.ans != null ? String(it.ans) : null)
   }));
 }
   
@@ -335,14 +342,14 @@ function sanitizeTypedBank(bank){
       const rows = jsPsych.data.get().values().map(t => {
         const lang = t.lang || RUN_LANG;
         const task = t.task || (t.phase || '');
-        const stim = t.stim || t.stimulus || t.prompt || '';
+        const stim = t.stim || t.stimulus || t.q || '';
         const rt   = (typeof t.rt==='number') ? t.rt : '';
         const resp = (typeof t.response!=='undefined') ? t.response : '';
         const typed= (typeof t.typed!=='undefined') ? t.typed : '';
         const corr = (typeof t.correct!=='undefined') ? t.correct : (typeof t.typed_correct!=='undefined' ? t.typed_correct : '');
         const isWord   = (typeof t.isWord!=='undefined')   ? t.isWord   : '';
         const isTarget = (typeof t.isTarget!=='undefined') ? t.isTarget : '';
-        const answer   = (typeof t.answer!=='undefined')   ? t.answer   : '';
+        const answer   = (typeof t.ans!=='undefined')   ? t.ans   : '';
         return [RESP_ID, lang, task, stim, rt, typed, resp, corr, isWord, isTarget, answer].join(',');
       });
       const header = "rid,lang,task,stimulus,rt,typed,response,correct,isWord,isTarget,answer\n";
