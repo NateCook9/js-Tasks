@@ -239,10 +239,10 @@
   const PRACT_LDT_ES = [ {stimulus:"gato",isWord:true},{stimulus:"priba",isWord:false},{stimulus:"coné",isWord:false},{stimulus:"limón",isWord:true} ];
   const PRACT_SCT_EN = [ {stimulus:"mouth",isTarget:true},{stimulus:"rat",isTarget:false},{stimulus:"button",isTarget:false},{stimulus:"leg",isTarget:true} ];
   const PRACT_SCT_ES = [ {stimulus:"boca",isTarget:true},{stimulus:"rata",isTarget:false},{stimulus:"botón",isTarget:false},{stimulus:"pierna",isTarget:true} ];
-  const PRACT_RECOG_EN = [ {prompt:"cat",answer:"gato"},{prompt:"car",answer:"carro"} ];
-  const PRACT_RECOG_ES = [ {prompt:"gato",answer:"cat"},{prompt:"carro",answer:"car"} ];
-  const PRACT_RECALL_EN= [ {prompt:"gato",answer:"cat"},{prompt:"carro",answer:"car"} ];
-  const PRACT_RECALL_ES= [ {prompt:"cat",answer:"gato"},{prompt:"car",answer:"carro"} ];
+  const PRACT_RECOG_EN = [ {q:"cat",ans:"gato"},{q:"car",ans:"carro"} ];
+  const PRACT_RECOG_ES = [ {q:"gato",ans:"cat"},{q:"carro",ans:"car"} ];
+  const PRACT_RECALL_EN= [ {q:"gato",ans:"cat"},{q:"carro",ans:"car"} ];
+  const PRACT_RECALL_ES= [ {q:"cat",ans:"gato"},{q:"car",ans:"carro"} ];
 
   // ---------- helpers ----------
   function showMsg(html){
@@ -293,20 +293,26 @@ function blockTyped(lang, bank, label){
     timeline: [{
       type: jsPsychSurveyHtmlForm,
       html: () => {
-        const p = jsPsych.timelineVariable('q') || "";
+        // Be defensive: handle if jsPsych.timelineVariable('q') yields an object
+        const raw = jsPsych.timelineVariable('q');
+        const promptText =
+          (typeof raw === 'string') ? raw :
+          (raw && typeof raw === 'object' && typeof raw.q === 'string') ? raw.q :
+          String(raw ?? '');
+
         return `
           <div>
-            <div class="stim">${p}</div>
+            <div class="stim">${promptText}</div>
             <input class="typed-input" type="text" name="resp" autocomplete="off" />
             <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
           </div>`;
       },
-      // use the non-conflicting keys we standardized on
-      data: { 
-        lang, 
-        task: label, 
-        q:   jsPsych.timelineVariable('q'), 
-        ans: jsPsych.timelineVariable('ans') 
+      // keep the non-conflicting keys
+      data: {
+        lang,
+        task: label,
+        q:   jsPsych.timelineVariable('q'),
+        ans: jsPsych.timelineVariable('ans')
       },
       on_load: () => {
         const i = document.querySelector('input[name=resp]');
@@ -320,7 +326,13 @@ function blockTyped(lang, bank, label){
       on_finish: d => {
         const r = (d.response && d.response.resp) ? d.response.resp : "";
         d.typed = r;
-        if (d.ans != null) d.typed_correct = (norm(r) === norm(d.ans));
+
+        // Normalize answer defensively too
+        const rawAns = (typeof d.ans === 'string') ? d.ans
+                    : (d.ans && typeof d.ans === 'object' && typeof d.ans.ans === 'string') ? d.ans.ans
+                    : (d.ans ?? "");
+
+        if (rawAns !== "") d.typed_correct = (norm(r) === norm(rawAns));
       }
     }],
     timeline_variables: bank,
