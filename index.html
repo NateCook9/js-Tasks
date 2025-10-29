@@ -25,6 +25,7 @@
   .stim { font-size:48px; margin-bottom:18px; }
   .msg { font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#555; padding:16px; }
   .jspsych-survey-html-form .jspsych-btn { display: none !important; }
+  .btn-hide { display: none !important; }
 </style>
 </head>
 <body>
@@ -430,36 +431,6 @@ console.log('First RECALL item:', RECALL_BANK && RECALL_BANK[0]);
   ];
 
   jsPsych.run(timeline);
-
-
-
-  jsPsych.onFinish(function(){
-    const rows = jsPsych.data.get().values().map(t => {
-      const lang = t.lang || RUN_LANG;
-      const task = t.task || (t.phase || '');
-      const stim = t.stim || t.stimulus || t.prompt || '';
-      const rt   = (typeof t.rt==='number') ? t.rt : '';
-      const resp = (typeof t.response!=='undefined') ? t.response : '';
-      const typed= (typeof t.typed!=='undefined') ? t.typed : '';
-      const corr = (typeof t.correct!=='undefined') ? t.correct : (typeof t.typed_correct!=='undefined' ? t.typed_correct : '');
-      const isWord   = (typeof t.isWord!=='undefined')   ? t.isWord   : '';
-      const isTarget = (typeof t.isTarget!=='undefined') ? t.isTarget : '';
-      const answer   = (typeof t.answer!=='undefined')   ? t.answer   : '';
-      return [RESP_ID, lang, task, stim, rt, typed, resp, corr, isWord, isTarget, answer].join(',');
-    });
-    const header = "rid,lang,task,stimulus,rt,typed,response,correct,isWord,isTarget,answer\n";
-    const csv = header + rows.join("\n");
-
-    // post back to Qualtrics parent
-    try {
-      window.parent.postMessage({ type:'jspsych-data', csv, lang: RUN_LANG }, '*');
-    } catch(e) {
-      console.warn('postMessage failed:', e);
-    }
-
-    // show a clear completion message when opened directly
-    document.body.innerHTML = '<div class="msg" style="text-align:center">Task finished. You may return to the survey.</div>';
-  });
 })();
 </script>
 </body>
