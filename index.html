@@ -301,20 +301,28 @@ function blockTyped(lang, bank, label){
             <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
           </div>`;
       },
-      data: { lang, task:label, prompt: jsPsych.timelineVariable('q'), answer: jsPsych.timelineVariable('answer') },
-      on_load: () => { const i = document.querySelector('input[name=resp]'); 
+      // use the non-conflicting keys we standardized on
+      data: { 
+        lang, 
+        task: label, 
+        q:   jsPsych.timelineVariable('q'), 
+        ans: jsPsych.timelineVariable('ans') 
+      },
+      on_load: () => {
+        const i = document.querySelector('input[name=resp]');
         if (i) {
           if (document.activeElement && document.activeElement !== i) {
             try { document.activeElement.blur(); } catch(_) {}
           }
           requestAnimationFrame(() => i.focus({ preventScroll: true }));
         }
+      },
       on_finish: d => {
         const r = (d.response && d.response.resp) ? d.response.resp : "";
         d.typed = r;
         if (d.ans != null) d.typed_correct = (norm(r) === norm(d.ans));
       }
-    },
+    }],
     timeline_variables: bank,
     randomize_order: false
   };
