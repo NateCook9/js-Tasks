@@ -421,32 +421,52 @@ console.log('First RECALL item:', RECALL_BANK && RECALL_BANK[0]);
     }
   };
   
+// helper at top of the script (after RUN_LANG etc.)
+function ping(stage){
+  try { window.parent.postMessage({ type:'jspsych-progress', stage }, '*'); }
+  catch(e){ console.warn('progress postMessage failed:', e); }
+}
+
+// ...
+
 const timeline = [
-  { type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">Click here and press any key to begin (${RUN_LANG}).</div>`, choices:"ALL_KEYS", data:{phase:"intro", lang:RUN_LANG, rid: RESP_ID} },
+  { type: jsPsychHtmlKeyboardResponse,
+    stimulus:`<div style="font-size:28px;">Click here and press any key to begin (${RUN_LANG}).</div>`,
+    choices:"ALL_KEYS",
+    data:{phase:"intro", lang:RUN_LANG, rid: RESP_ID}
+  },
 
   // LDT
   instr(RUN_LANG, `${hdr}<br><br><b>Word Decision Task</b> ... Press any key to begin practice.`),
   blockLDT(RUN_LANG, (RUN_LANG==='ES' ? PRACT_LDT_ES : PRACT_LDT_EN), "LDT_practice"),
   instr(RUN_LANG, `Now the real task begins. ...`),
-  { timeline: [ blockLDT(RUN_LANG, LDT_BANK, "LDT") ], on_timeline_finish: () => ping('LDT') },
+  { timeline: [ blockLDT(RUN_LANG, LDT_BANK, "LDT") ],
+    on_timeline_finish: () => ping('LDT')
+  },
 
   // SCT
   instr(RUN_LANG, `${hdr}<br><br><b>Category Judgement Task</b> ...`),
   blockSCT(RUN_LANG, (RUN_LANG==='ES' ? PRACT_SCT_ES : PRACT_SCT_EN), "SCT_practice"),
   instr(RUN_LANG, `Now the real category judgement task begins. ...`),
-  { timeline: [ blockSCT(RUN_LANG, SCT_BANK, "SCT") ], on_timeline_finish: () => ping('SCT') },
+  { timeline: [ blockSCT(RUN_LANG, SCT_BANK, "SCT") ],
+    on_timeline_finish: () => ping('SCT')
+  },
 
   // Recognition (typed)
   instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recognition Translation</b> ...`),
   blockTyped(RUN_LANG, PRACT_RECOG_BANK,  "Recognition_practice"),
   instr(RUN_LANG, `Now the real recognition block begins. Press any key.`),
-  { timeline: [ blockTyped(RUN_LANG, RECOG_BANK, "Recognition") ], on_timeline_finish: () => ping('RECOG') },
+  { timeline: [ blockTyped(RUN_LANG, RECOG_BANK, "Recognition") ],
+    on_timeline_finish: () => ping('RECOG')
+  },
 
   // Recall (typed)
   instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recall Translation</b> ...`),
   blockTyped(RUN_LANG, PRACT_RECALL_BANK, "Recall_practice"),
   instr(RUN_LANG, `Now the real recall block begins. Press any key.`),
-  { timeline: [ blockTyped(RUN_LANG, RECALL_BANK, "Recall") ], on_timeline_finish: () => ping('RECALL') },
+  { timeline: [ blockTyped(RUN_LANG, RECALL_BANK, "Recall") ],
+    on_timeline_finish: () => ping('RECALL')
+  },
 
   endCard
 ];
