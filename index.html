@@ -48,6 +48,12 @@
   const RESP_ID     = q.get('rid') || '';
 
   console.log({ RUN_LANG, LIST_LDT, LIST_SCT, LIST_RECOG, LIST_RECALL, RESP_ID });
+  console.log('TYPED RAW VARS:', {
+    html_q: jsPsych.timelineVariable('q'),
+    data_q: jsPsych.timelineVariable('q'),
+    data_ans: jsPsych.timelineVariable('ans')
+});
+
 
   
   
