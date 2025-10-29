@@ -392,6 +392,8 @@ function sanitizeTypedBank(bank){
   const SCT_BANK   = (RUN_LANG==='ES' ? SCT_ES : SCT_EN)[LIST_SCT-1];
   const RECOG_BANK = sanitizeTypedBank((RUN_LANG==='ES' ? RECOG_ES : RECOG_EN)[LIST_RECOG-1]);
   const RECALL_BANK= sanitizeTypedBank((RUN_LANG==='ES' ? RECALL_ES: RECALL_EN)[LIST_RECALL-1]);
+  const PRACT_RECOG_BANK = sanitizeTypedBank(RUN_LANG==='ES' ? PRACT_RECOG_ES  : PRACT_RECOG_EN);
+  const PRACT_RECALL_BANK= sanitizeTypedBank(RUN_LANG==='ES' ? PRACT_RECALL_ES : PRACT_RECALL_EN);
 
 console.log('BANK TYPES:', {
   LDT: Array.isArray(LDT_BANK),
@@ -444,13 +446,13 @@ console.log('First RECALL item:', RECALL_BANK && RECALL_BANK[0]);
 
     // Recognition (typed)
     instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recognition Translation</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
-    blockTyped(RUN_LANG, (RUN_LANG==='ES' ? PRACT_RECOG_ES : PRACT_RECOG_EN), "Recognition_practice"),
+    blockTyped(RUN_LANG, PRACT_RECOG_BANK,  "Recognition_practice"),
     instr(RUN_LANG, `Now the real recognition block begins. Press any key.`),
     blockTyped(RUN_LANG, RECOG_BANK, "Recognition"),
 
     // Recall (typed)
     instr(RUN_LANG, `${hdr}<br><br><b>Vocabulary Recall Translation</b><br>Type the translation and press Enter.<br><i>Press any key to begin practice.</i>`),
-    blockTyped(RUN_LANG, (RUN_LANG==='ES' ? PRACT_RECALL_ES : PRACT_RECALL_EN), "Recall_practice"),
+    blockTyped(RUN_LANG, PRACT_RECALL_BANK, "Recall_practice"),
     instr(RUN_LANG, `Now the real recall block begins. Press any key.`),
     blockTyped(RUN_LANG, RECALL_BANK, "Recall"),
 
