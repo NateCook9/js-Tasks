@@ -378,7 +378,7 @@ function sanitizeTypedBank(bank){
         const corr = (typeof t.correct!=='undefined') ? t.correct : (typeof t.typed_correct!=='undefined' ? t.typed_correct : '');
         const isWord   = (typeof t.isWord!=='undefined')   ? t.isWord   : '';
         const isTarget = (typeof t.isTarget!=='undefined') ? t.isTarget : '';
-        const answer   = (typeof t.ans!=='undefined')   ? t.ans   : '';
+        const answer = (t.ans ?? '');
         return [RESP_ID, lang, task, stim, rt, typed, resp, corr, isWord, isTarget, answer].join(',');
       });
       const header = "rid,lang,task,stimulus,rt,typed,response,correct,isWord,isTarget,answer\n";
