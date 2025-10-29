@@ -445,6 +445,10 @@ console.log('First RECALL item:', RECALL_BANK && RECALL_BANK[0]);
     endCard
   ];
 
+console.log('CHECK RECOG item 0:', RECOG_BANK[0], typeof RECOG_BANK[0]?.q);
+console.log('CHECK RECALL item 0:', RECALL_BANK[0], typeof RECALL_BANK[0]?.q);
+// Expect: object with {q: "...", ans: "..."}, and the typeof q should be "string".
+
   jsPsych.run(timeline);
 })();
 </script>
