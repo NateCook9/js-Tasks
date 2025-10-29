@@ -46,6 +46,9 @@
   const LIST_RECALL = clamp(q.get('list_recall') || q.get('list_id') || 1);
   const RESP_ID     = q.get('rid') || '';
 
+  console.log({ RUN_LANG, LIST_LDT, LIST_SCT, LIST_RECOG, LIST_RECALL, RESP_ID });
+
+  
   
   // ---------- stimuli (your arrays unchanged, except tiny typo fix noted below) ----------
   const LDT_EN = [
@@ -332,6 +335,16 @@ function sanitizeTypedBank(bank){
   const RECOG_BANK = sanitizeTypedBank((RUN_LANG==='ES' ? RECOG_ES : RECOG_EN)[LIST_RECOG-1]);
   const RECALL_BANK= sanitizeTypedBank((RUN_LANG==='ES' ? RECALL_ES: RECALL_EN)[LIST_RECALL-1]);
 
+console.log('BANK TYPES:', {
+  LDT: Array.isArray(LDT_BANK),
+  SCT: Array.isArray(SCT_BANK),
+  RECOG_isArray: Array.isArray(RECOG_BANK),
+  RECALL_isArray: Array.isArray(RECALL_BANK)
+});
+console.log('First RECOG item:', RECOG_BANK && RECOG_BANK[0]);
+console.log('First RECALL item:', RECALL_BANK && RECALL_BANK[0]);
+
+  
   if (!Array.isArray(LDT_BANK) || !Array.isArray(SCT_BANK) || !Array.isArray(RECOG_BANK) || !Array.isArray(RECALL_BANK)) {
     showMsg('Invalid list index or missing stimuli. Check URL parameters and arrays.');
     return;
@@ -339,6 +352,23 @@ function sanitizeTypedBank(bank){
 
   const hdr = (RUN_LANG==='ES') ? "Bloque en <b>español</b>" : "Block in <b>English</b>";
 
+  const endCard = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div style="font-size:28px;">
+                 Thanks! You finished this task (${RUN_LANG}).<br>
+                 <small>If the survey does not continue automatically, click the button below.</small><br><br>
+                 <button id="fallback-finish" style="font-size:18px;padding:10px 16px;">Return to survey</button>
+               </div>`,
+    choices: "NO_KEYS",
+    trial_duration: 1200,
+    on_load: () => {
+      const b = document.getElementById('fallback-finish');
+      if (b) b.addEventListener('click', () => {
+        window.parent.postMessage({ type:'jspsych-data', csv: null, lang: RUN_LANG }, '*');
+      });
+    }
+  };
+  
   const timeline = [
     { type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">Click here and press any key to begin (${RUN_LANG}).</div>`, choices:"ALL_KEYS", data:{phase:"intro", lang:RUN_LANG, rid: RESP_ID} },
 
@@ -366,10 +396,12 @@ function sanitizeTypedBank(bank){
     instr(RUN_LANG, `Now the real recall block begins. Press any key.`),
     blockTyped(RUN_LANG, RECALL_BANK, "Recall"),
 
-    { type: jsPsychHtmlKeyboardResponse, stimulus:`<div style="font-size:28px;">Thanks! You finished this task (${RUN_LANG}).</div>`, choices:"ALL_KEYS", data:{phase:"end", lang:RUN_LANG} }
+    endCard
   ];
 
   jsPsych.run(timeline);
+
+
 
   jsPsych.onFinish(function(){
     const rows = jsPsych.data.get().values().map(t => {
