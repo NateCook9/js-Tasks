@@ -290,56 +290,33 @@
     };
   }
 function blockTyped(lang, bank, label){
-  return {
-    timeline: [{
-      type: jsPsychSurveyHtmlForm,
-      html: () => {
-        // DEBUG: see exactly what jsPsych gives us for this trial
-        const rawQ   = jsPsych.timelineVariable('q');
-        const rawAns = jsPsych.timelineVariable('ans');
-        console.log('[blockTyped] rawQ=', rawQ, 'rawAns=', rawAns);
-
-        // Force a clean string for the prompt no matter what we get
-        const promptText =
-          (typeof rawQ === 'string') ? rawQ :
-          (rawQ && typeof rawQ === 'object' && typeof rawQ.q === 'string') ? rawQ.q :
-          String(rawQ ?? '');
-
-        return `
-          <div>
-            <div class="stim">${promptText}</div>
-            <input class="typed-input" type="text" name="resp" autocomplete="off" />
-            <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
-          </div>`;
-      },
-      // store what we got (don’t assume types)
-      data: {
-        lang,
-        task: label,
-        q:   jsPsych.timelineVariable('q'),
-        ans: jsPsych.timelineVariable('ans')
-      },
-      on_load: () => {
-        const i = document.querySelector('input[name=resp]');
-        if (i) {
-          if (document.activeElement && document.activeElement !== i) {
-            try { document.activeElement.blur(); } catch(_) {}
-          }
-          requestAnimationFrame(() => i.focus({ preventScroll: true }));
+  const trials = bank.map(item => ({
+    type: jsPsychSurveyHtmlForm,
+    html: `
+      <div>
+        <div class="stim">${typeof item.q === 'string' ? item.q : String(item.q ?? '')}</div>
+        <input class="typed-input" type="text" name="resp" autocomplete="off" />
+        <button class="btn-hide" type="submit" aria-hidden="true" tabindex="-1">OK</button>
+      </div>`,
+    data: { lang, task: label, q: item.q ?? '', ans: item.ans ?? '' },
+    on_load: () => {
+      const i = document.querySelector('input[name=resp]');
+      if (i) {
+        if (document.activeElement && document.activeElement !== i) {
+          try { document.activeElement.blur(); } catch(_) {}
         }
-      },
-      on_finish: d => {
-        const r = (d.response && d.response.resp) ? d.response.resp : "";
-        d.typed = r;
-
-        // Normalize the answer defensively
-        const rawAns = (typeof d.ans === 'string') ? d.ans
-                    : (d.ans && typeof d.ans === 'object' && typeof d.ans.ans === 'string') ? d.ans.ans
-                    : (d.ans ?? "");
-        if (rawAns !== "") d.typed_correct = (norm(r) === norm(rawAns));
+        requestAnimationFrame(() => i.focus({ preventScroll: true }));
       }
-    }],
-    timeline_variables: bank,
+    },
+    on_finish: d => {
+      const r = (d.response && d.response.resp) ? d.response.resp : "";
+      d.typed = r;
+      if (d.ans != null) d.typed_correct = (norm(r) === norm(d.ans));
+    }
+  }));
+
+  return {
+    timeline: [ fix(lang, label), ...trials ],
     randomize_order: false
   };
 }
